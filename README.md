@@ -1,7 +1,7 @@
 # NetWork
 多线程网络Tips
 
-## 多线程网络
+## 多线程
 
 #### 线程和进程的区别？一个程序至少有一个进程,一个进程至少有一个线程
 进程：一个程序的一次运行，在执行过程中拥有独立的内存单元，而多个线程共享一块内存
@@ -250,11 +250,11 @@ dispatch_group_t group = dispatch_group_create();
 __block UIImage *img1 = nil;
 // 3.1将任务放在队列里面，再将队列放在队列组里面
 dispatch_group_async(group, queue, ^{
-NSString *urlStr = @"https://www.baidu.com/img/bd_logo1.png";
-NSURL *url = [NSURL URLWithString:urlStr];
-NSData *data = [NSData dataWithContentsOfURL:url];
-// 再外面修改内部的值，加上__
-img1 = [UIImage imageWithData:data];
+    NSString *urlStr = @"https://www.baidu.com/img/bd_logo1.png";
+    NSURL *url = [NSURL URLWithString:urlStr];
+    NSData *data = [NSData dataWithContentsOfURL:url];
+    // 再外面修改内部的值，加上__
+    img1 = [UIImage imageWithData:data];
 });
 __block UIImage *img2 = nil;
 // 3.2将任务放在队列里面，再将队列放在队列组里面
@@ -476,5 +476,471 @@ SDWebImageOptions
 * SDWebImageRetryFailed : 下载失败后，会自动重新下载
 * SDWebImageLowPriority : 当正在进行UI交互时，自动暂停内部的一些下载操作
 * SDWebImageRetryFailed | SDWebImageLowPriority : 拥有上面2个功能
+```
+
+### 网络
+
+```
+一、一个HTTP请求的基本要素
+
+1.请求URL：客户端通过哪个路径找到服务器
+* URL的基本格式 = 协议头://主机地址/路径
+
+2.请求参数：客户端发送给服务器的数据
+* 比如登录时需要发送的用户名和密码
+
+3.返回结果：服务器返回给客户端的数据
+* 一般是JSON数据或者XML数据
+
+二、基本的HTTP请求的步骤（移动客户端）
+
+1.拼接"请求URL" + "?" + "请求参数"
+* 请求参数的格式：参数名=参数值
+* 多个请求参数之间用&隔开：参数名1=参数值1&参数名2=参数值2
+* 比如：http://localhost:8080/Server/login?username=123&pwd=456
+
+2.发送请求
+
+3.解析服务器返回的数据
+
+**NSURLConnection**
+* 同步请求，不常用 
+[NSURLConnection sendSynchronousRequest:request returningResponse:nil error:nil];
+
+1.发布异步请求--block回调
+
++ (void)sendAsynchronousRequest:(NSURLRequest*) request
+queue:(NSOperationQueue*) queue
+completionHandler:(void (^)(NSURLResponse* response, NSData* data, NSError* connectionError)) handler
+* request : 需要发送的请求
+* queue : 一般用主队列，存放handler这个任务
+* handler : 当请求完毕后，会自动调用这个block
+
+2.利用NSURLConnection发送请求的基本步骤
+1> 创建URL
+NSURL *url = [NSURL URLWithString:@"http://4234324/5345345"];
+2> 创建request
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+3> 发送请求
+[NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:
+^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+4> 处理服务器返回的数据
+}];
+
+3. NSURLConnection代理的方法
+[[NSURLConnection alloc]initWithRequest:request delegate:self]; //有返回值,但是自动开启用不到，只有当startImmediately:NO 才需要拿到实例变量手动开启
+#pragma mark - delegate
+/** 发送异步网络请求之后，请求失败之后会调用(请求超时，没有网络)  */
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
+
+/** 开始收到服务器的响应时候调用*/
+-(void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+
+/** 受到服务器返回的数据时候调用(如果数据很大的话，这个方法会调用多次，一般都在这个方法里面拼接data)  */
+-(void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
+
+/** 请求结束的时候调用 (一般再这个方法里面 做一些数据的处理) */
+-(void)connectionDidFinishLoading:(NSURLConnection *)connection
+
+```
+
+**JSON解析**
+
+```
+1.利用NSJSONSerialization类解析 -> 官方的，性能较好
+* JSON数据（NSData） --> Foundation-OC对象（NSDictionary、NSArray、NSString、NSNumber）
+
+> NSDictionary *dataDict = [NSJSONSerialization JSONObjectWithData:self.data options:NSJSONReadingMutableLeaves error:&err];
+
+> NSData *data = [NSJSONSerialization dataWithJSONObject:dataDict options:NSJSONReadingMutableLeaves error:nil]
+
+2.JSON解析规律
+* { } --> NSDictionary @{ }
+* [ ] --> NSArray @[ ]
+* " " --> NSString @" "
+* 10 --> NSNumber @10
+```
+
+**XML解析**
+
+```
+1.语法
+1> 文档声明
+<?xml version="1.0" encoding="UTF-8" ?>
+
+2> 元素
+3> 属性
+<videos>
+    <video name="小黄人 第01部" length="10"/>
+    <video name="小黄人 第01部" length="10"/>
+</videos>
+
+* videos和video是元素（节点）
+* name和length叫做元素的属性
+* video元素是videos元素的子元素
+
+2.解析 : 一般抽取一个工具类来做解析的功能
+```
+
+**SAX解析：逐个元素往下解析，适合大文件**
+
+```objc
+//1.创建解析器
+NSXMLParser *parser = [[NSXMLParser alloc]initWithData:data];
+//2.设置代理: 把解析的结果告诉代理，实际上是代理监听解析的风吹草动
+parser.delegate = self;
+//3.开始解析(事件驱动)
+[parser parse]; // （同步执行:再主线程中执行，所以不能搞太大的文件，不然会阻塞主线程）
+
+/*** 代理 ***/
+#pragma mark - NSXMLParserDelegate
+/** 开始解析到文档的时候调用 ：解析开始 */
+- (void)parserDidStartDocument:(NSXMLParser *)parser
+
+/**
+*  开始解析到元素的时候调用
+*
+*  @param parser        解析器对象
+*  @param elementName   元素的名称(这一节点元素的名称)
+*  @param attributeDict 属性字典 (这一节点内属性的 字典,注意，只是解析到的当前节点内的字典)
+*/
+- (void)parser:(NSXMLParser *)parser didStartElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName attributes:(NSDictionary *)attributeDict{
+    // 因为节点有多个，所以要判断一下，只需要解析模型对应的节点
+    if ([elementName isEqualToString:@"videos"]) return; // 直接返回。不需要创建video 模型
+
+    // 能来到这里那么就是video 对应的节点
+    JNVideo *video = [JNVideo videoWithDict:attributeDict];
+    [self.tempArray addObject:video];
+}
+
+/** 结束解析到元素的时候调用 */
+- (void)parser:(NSXMLParser *)parser didEndElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName
+
+/** 结束解析到文档的时候调用 ：解析结束 */
+-(void)parserDidEndDocument:(NSXMLParser *)parser
+```
+
+**DOM解析：一口气将整个XML文档加载进内存，适合小文件，使用最简单**
+
+```objc
+if (data) { // Dom 解析
+    //  获取整个XML文档 (dom==》document)
+    GDataXMLDocument *doc = [[GDataXMLDocument alloc]initWithData:data options:0 error:nil];
+    NSMutableArray *tempArray = [NSMutableArray array]; // 装对象
+    // 获取根元素-- videos
+    GDataXMLElement *rootElem = [doc rootElement];
+    // 获取子元素 video
+    NSArray *elements = [rootElem elementsForName:@"video"];
+    // 获取子元素的属性，赋值给模型
+    for (GDataXMLElement *element in elements) {
+        JNVideo *video = [[JNVideo alloc]init];
+        video.ID = [element attributeForName:@"id"].stringValue.intValue;
+        video.name = [element attributeForName:@"name"].stringValue;
+        video.image = [element attributeForName:@"image"].stringValue;
+        video.url = [element attributeForName:@"url"].stringValue;
+        video.length = [element attributeForName:@"length"].stringValue.intValue;
+        [tempArray addObject:video];
+    }
+}
+```
+
+**HTTP的通信过程**
+
+```
+1.请求
+* 请求行 : 请求方法、请求路径、HTTP协议的版本
+GET /MJServer/resources/images/1.jpg HTTP/1.1
+
+* 请求头 : 对客户端的环境描述、客户端请求的主机地址
+User-Agent // 客户端的类型,客户端的软件环境
+Host: 192.168.1.105:8080 // 客户端想访问的服务器主机地址
+Accept: text/html,  // 客户端所能接收的数据类型
+Accept-Language: zh-cn // 客户端的语⾔言环境
+Accept-Encoding: gzip // 客户端⽀支持的数据压缩格式
+
+* 请求体 : POST请求才有请求体
+请求参数，发给服务器的数据 客户端发给服务器的具体数据,⽐如文件数据
+
+// -->响应
+2.响应
+* 状态行（响应行）: HTTP协议的版本、响应状态码、响应状态描述
+HTTP/1.1 200 OK
+
+* 响应头：服务器的一些描述信息
+Content-Type : 服务器返回给客户端的内容类型
+Content-Length : 服务器返回给客户端的内容的长度（比如文件的大小）
+
+* 实体内容（响应体）
+服务器返回给客户端具体的数据，比如文件数据
+```
+
+**HTTP的请求方法**
+```
+1.GET
+1> 特点
+* 所有请求参数都拼接在url后面
+
+2> 缺点
+* 在url中暴露了所有的请求数据，不太安全
+* url的长度有限制，不能发送太多的参数
+
+3> 使用场合
+* 如果仅仅是向服务器索要数据，一般用GET请求
+
+4> 如何发送一个GET请求
+* 默认就是GET请求
+// 1.URL
+NSURL *url = [NSURL URLWithString:@"http://www.baidu.com"];
+// 2.请求
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+// 3.发送请求,异步
+[NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+}];
+
+2.POST
+* 特点
+把所有请求参数放在请求体（HTTPBody）中
+理论上讲，发给服务器的数据的大小是没有限制
+
+*使用场合
+除开向服务器索要数据以外的请求，都可以用POST请求
+如果发给服务器的数据是一些隐私、敏感的数据，绝对要用POST请求
+```
+
+如何发送一个POST请求
+```objc
+// 1.创建一个URL ： 请求路径
+NSURL *url = [NSURL URLWithString:@"http://localhost:8080/Server/login"];
+// 2.创建一个请求
+NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+// 设置请求方法
+request.HTTPMethod = @"POST";
+// 设置请求体 : 请求参数
+NSString *param = [NSString stringWithFormat:@"username=%@&pwd=%@", usernameText, pwdText];
+// NSString --> NSData
+request.HTTPBody = [param dataUsingEncoding:NSUTF8StringEncoding];
+
+// 发送请求
+[NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+
+    // 真实类型是 NSHTTPURLResponse ，内部获得状态码，请求头信息
+    NSHTTPURLResponse *resp =(NSHTTPURLResponse *)response;
+    // 打印响应头
+    NSLog(@"---%@",resp.allHeaderFields);
+    //     NSURLResponse *respons 这个对象非常重要
+    //     发给服务器的参数全部放在请求体中
+    //     设置请求头的信息(客户端的环境) 
+    [ setValue: forHTTPHeaderField:@"User-Agent"];
+}];
+```
+
+```
+URL转码
+URL中不能包含中文，得对中文进行转码(加上一堆的%)
+NSString *urlStr = [NSString stringWithFormat:@"http://localhost/login?username=喝喝&pwd=123"];
+urlStr = [urlStr stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+```
+
+
+```
+数据安全
+1.网络数据加密
+* 加密对象：隐私数据，比如密码、银行信息
+* 加密方案
+提交隐私数据，必须用POST请求
+使用加密算法对隐私数据进行加密，比如MD5
+* 加密增强：为了加大破解的难度
+对明文进行2次MD5 ： MD5(MD5($pass))
+先对明文撒盐，再进行MD5 ： MD5($pass.$salt)
+
+2.本地存储加密
+* 加密对象：重要的数据，比如游戏数据
+
+3.代码安全问题
+* 现在已经有工具和技术能反编译出源代码：逆向工程
+反编译出来的都是纯C语言的，可读性不高
+最起码能知道源代码里面用的是哪些框架
+
+参考书籍：《iOS逆向工程》
+
+解决方案：发布之前对代码进行混淆
+* 混淆之前
+@interface HMPerson :NSObject
+- (void)run;
+- (void)eat;
+@end
+
+* 混淆之后
+@interface A :NSObject
+- (void)a;
+- (void)b;
+@end
+
+```
+
+**大文件下载**
+1.方案：利用NSURLConnection和它的代理方法
+
+```objc
+NSURL *url = [NSURL URLWithString:@"http://localhost:8080/Server/resources/videos.zip"];
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+// 下载(创建完conn对象后，会自动发起一个异步请求)
+[NSURLConnection connectionWithRequest:request delegate:self];
+
+/**
+在接收到服务器的响应时：
+1.创建一个空的文件
+2.用一个句柄对象关联这个空的文件，目的是：方便后面用句柄对象往文件后面写数据
+*/
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response{
+    // 文件路径
+    NSString *caches = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
+    NSString *filepath = [caches stringByAppendingPathComponent:@"videos.zip"];
+
+    // 创建一个空的文件 到 沙盒中
+    NSFileManager *mgr = [NSFileManager defaultManager];
+    [mgr createFileAtPath:filepath contents:nil attributes:nil];
+
+    // 创建一个用来写数据的文件句柄
+    self.writeHandle = [NSFileHandle fileHandleForWritingAtPath:filepath];
+}
+
+/**
+在接收到服务器返回的文件数据时，利用句柄对象往文件的最后面追加数据
+*/
+- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data{
+    // 移动到文件的最后面
+    [self.writeHandle seekToEndOfFile];
+
+    // 将数据写入沙盒
+    [self.writeHandle writeData:data];
+}
+
+/**
+在所有数据接收完毕时，关闭句柄对象
+*/
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection{
+    // 关闭文件
+    [self.writeHandle closeFile];
+    self.writeHandle = nil;
+}
+
+2.注意点：千万不能用NSMutableData来拼接服务器返回的数据
+```
+
+```
+NSURLConnection发送异步请求的方法
+1.block形式 - 除开大文件下载以外的操作，都可以用这种形式
+[NSURLConnection sendAsynchronousRequest:req queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+
+}];
+
+2.代理形式 - 一般用在大文件下载
+```
+
+三、NSURLSession
+*  NSURLSession :[NSURLSession sharedSession] 单例
+*  NSURLSessionDataTask :GET\POST
+*  NSURLSessionDownloadTask : 文件下载
+*  NSURLSessionUploadTask : 文件上传(不常用)
+*  三步走：
+1. 获取session 对象
+2. 获取任务对象 (session 可以通过request，或者url 来发送请求)
+3. [task resume]
+
+*  finishTasksAndInvalidate 完成任务，关闭请求
+*  invalidateAndCancel  取消请求
+
+
+```objc
+用途：用于非文件下载的GET\POST请求
+NSURLSessionDataTask *task = [self.session dataTaskWithRequest:request];
+NSURLSessionDataTask *task = [self.session dataTaskWithURL:url];
+NSURLSessionDataTask *task = [self.session dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+
+}];
+
+```
+
+```objc
+NSURLSessionDownloadTask
+* 用途：用于文件下载（小文件、大文件）
+NSURLSessionDownloadTask *task = [self.session downloadTaskWithRequest:request];
+NSURLSessionDownloadTask *task = [self.session downloadTaskWithURL:url];
+NSURLSessionDownloadTask *task = [self.session downloadTaskWithURL:url completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+// 回调处理  利用url NSURLSessionDownloadTask 来下载数据 (再异步线程中,不会阻塞主线程)
+// 文件下载在tmp 路径中: location.path
+}];
+[task resume]; // 恢复下载（一定要写，表示开始）
+```
+
+```objc
+/** 临时文件的路径（下载好的文件）*/
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location{
+    // location : 临时文件的路径（下载好的文件）
+    // response.suggestedFilename ： 建议使用的文件名，一般跟服务器端的文件名一致
+    // 将临时文件剪切或者复制Caches文件夹
+
+    // AtPath : 剪切前的文件路径
+    // ToPath : 剪切后的文件路径
+    [mgr moveItemAtPath:location.path toPath:file error:nil];
+}
+
+/**
+*  恢复下载时调用
+*/
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didResumeAtOffset:(int64_t)fileOffset expectedTotalBytes:(int64_t)expectedTotalBytes
+
+/**
+*  每当下载完（写完）一部分时就会调用（可能会被调用多次）
+*  @param bytesWritten              这次调用写了多少
+*  @param totalBytesWritten         累计写了多少长度到沙盒中了
+*  @param totalBytesExpectedToWrite 文件的总长度
+*/
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
+{
+    double progress = (double)totalBytesWritten / totalBytesExpectedToWrite;
+}
+
+```
+
+```objc
+AFN 文件上传
+
+[mgr POST:@"http://localhost:8080/MJServer/upload" parameters:params constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+
+    /** 这个block 专门用来上传文件的，调用的比下面两个早
+    *  appendPartWithFileData: 需要上传的文件的二进制数据
+    *  name: 服务器端文件参数名
+    *  filename: 上传到服务器的名称
+    *  mimeType: 文件类型
+    */
+
+    UIImage *img = [UIImage imageNamed:@"0"];
+    NSData *data = UIImagePNGRepresentation(img);
+        // 方式1
+        [formData appendPartWithFileData:data name:@"file" fileName:@"mm.png" mimeType:@"image/png"];
+        // 方式2
+        [formData appendPartWithFileURL:url name:@"file" fileName:@"xixi.png" mimeType:@"image/png" error:nil];
+
+        } success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSLog(@"-请求成功-%@",responseObject);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    NSLog(@"--请求失败-%@",error);
+}];
+
+```
+
+```
+// 加入插入数据库插入一万条数据你怎么搞？
+1. 插入数据的操作放在子线程，这里注意：最好的情况是开一条子线程，并且最好是串行执行的任务.这样较好的保证数据的一致。 如果GCD玩的六，那么可以开多条线程。搞好读写
+
+2. 利用事务
+* 开启事务-> 备份
+* 提交事务-> 删除备份
+* 回滚-> 执行失败，用备份还原数据,回滚之后，就立马停止插入操作（跳出循环,没必要继续走下去）
+注意： 执行一条sql 语句，都会频繁的开启事务关闭事务，这就是耗时的原因所在,在执行添加数据的前后开启提交数据，那么在插入数据的时候，内部就不会开启事务,这样保证了只开启一次事务，避免了开启一万条数据
+
+3.预编译绑定：之前就准备好，直接给你 + 事务
 ```
 
