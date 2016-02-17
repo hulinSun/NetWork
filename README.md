@@ -38,7 +38,7 @@ NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(down
 [thread start];
 ```
 
-2. 创建完自动启动 --> 分离出子线程
+2.创建完自动启动 --> 分离出子线程
 ```objc
 [NSThread detachNewThreadSelector:@selector(download:) toTarget:self withObject:nil];
 ```
@@ -47,6 +47,66 @@ NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(down
 ```objc
 [self performSelectorInBackground:@selector(download:) withObject:nil];
 ```
+**常见方法**
+```
+1> 获得当前线程
++ (NSThread *)currentThread;
+
+2> 获得主线程
++ (NSThread *)mainThread;
+
+3> 睡眠（暂停），退出线程
++ (void)sleepUntilDate:(NSDate *)date;
++ (void)sleepForTimeInterval:(NSTimeInterval)ti;
+[NSThread exit]; // 销毁线程：线程执行完毕之后就会自动消亡
+
+4> 设置线程的名字
+- (void)setName:(NSString *)n;
+- (NSString *)name;
+
+5> 再当前线程中执行某一个方法，相当于直接执行某一个方法
+[self performSelector:@selector(test:) withObject:@"哈哈"];
+```
+
+### 线程同步
+
+1.实质：为了防止多个线程抢夺同一个资源造成的数据安全问题
+2.实现：给代码加一个互斥锁（同步锁）
+```objc
+@synchronized(self) { // 一定要使用同一把锁，这样才能全局的把控,其他线程也能被锁住
+// 被锁住的代码
+}
+```
+
+```objc
+// 回到主线程，线程之间的通信
+[self performSelectorOnMainThread:@selector(downloadFinished:) withObject:img waitUntilDone:YES];
+```
+
+### GCD
+
+**GCD要点**
+*  两个核心概念：任务(执行什么操作,用block 封装任务) 和 队列:(用来存放任务)
+*  将任务添加到队列中
+*  GCD会自动将队列中的任务取出，放到对应的线程中执行
+*  任务的取出遵循队列的FIFO原则：先进先出，后进后出
+*  dispatch_async: 异步的方式执行任务, 具备开启线程的能力(一般用来开启子线程)
+*  dispatch_sync :同步的方式执行任务 (不具备开启线程的能力)
+*  并发队列： Concurrent
+>  可以让多个任务并发（同时）执行（自动开启多个线程同时执行任务）
+>  并发功能只有在异步（dispatch_async）函数下才有效
+
+*  串行队列(Serial)：让任务一个接着一个地执行（一个任务执行完毕后，再执行下一个任务）
+*  容易混淆概念
+>  同步和异步主要影响：能不能开启新的线程
+>  同步：在当前线程中执行任务，不具备开启新线程的能力
+>  异步：在新的线程中执行任务，具备开启新线程的能力
+
+>  并发和串行主要影响：任务的执行方式
+>  并发：多个任务并发（同时）执行
+>  串行：一个任务执行完毕后，再执行下一个任务
+
+
 
 
 
