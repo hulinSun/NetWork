@@ -22,7 +22,7 @@
 
 *  同一时间，cpu只能执行一条线程，那为什么开启多条线程能达到同时执行的效果呢？？
 cpu 再同一时间只执行一条线程，但是，cpu再很短的时间片内切换与不同的线程，所以表面上开起来多线程同时执行
-*  cpu再时间片内的切换--->调度
+*  cpu再时间片内的切换---.调度
 
 #### 线程概念
 
@@ -38,7 +38,7 @@ NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(down
 [thread start];
 ```
 
-2.创建完自动启动 --> 分离出子线程
+2.创建完自动启动 --. 分离出子线程
 ```objc
 [NSThread detachNewThreadSelector:@selector(download:) toTarget:self withObject:nil];
 ```
@@ -49,22 +49,22 @@ NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(down
 ```
 **常见方法**
 ```
-1> 获得当前线程
+1 获得当前线程
 + (NSThread *)currentThread;
 
-2> 获得主线程
+2 获得主线程
 + (NSThread *)mainThread;
 
-3> 睡眠（暂停），退出线程
+3. 睡眠（暂停），退出线程
 + (void)sleepUntilDate:(NSDate *)date;
 + (void)sleepForTimeInterval:(NSTimeInterval)ti;
 [NSThread exit]; // 销毁线程：线程执行完毕之后就会自动消亡
 
-4> 设置线程的名字
+4. 设置线程的名字
 - (void)setName:(NSString *)n;
 - (NSString *)name;
 
-5> 再当前线程中执行某一个方法，相当于直接执行某一个方法
+5. 再当前线程中执行某一个方法，相当于直接执行某一个方法
 [self performSelector:@selector(test:) withObject:@"哈哈"];
 ```
 
@@ -93,18 +93,18 @@ NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(down
 *  dispatch_async: 异步的方式执行任务, 具备开启线程的能力(一般用来开启子线程)
 *  dispatch_sync :同步的方式执行任务 (不具备开启线程的能力)
 *  并发队列： Concurrent
->  可以让多个任务并发（同时）执行（自动开启多个线程同时执行任务）
->  并发功能只有在异步（dispatch_async）函数下才有效
+.  可以让多个任务并发（同时）执行（自动开启多个线程同时执行任务）
+.  并发功能只有在异步（dispatch_async）函数下才有效
 
 *  串行队列(Serial)：让任务一个接着一个地执行（一个任务执行完毕后，再执行下一个任务）
 *  容易混淆概念
->  同步和异步主要影响：能不能开启新的线程
->  同步：在当前线程中执行任务，不具备开启新线程的能力
->  异步：在新的线程中执行任务，具备开启新线程的能力
+.  同步和异步主要影响：能不能开启新的线程
+.  同步：在当前线程中执行任务，不具备开启新线程的能力
+.  异步：在新的线程中执行任务，具备开启新线程的能力
 
->  并发和串行主要影响：任务的执行方式
->  并发：多个任务并发（同时）执行
->  串行：一个任务执行完毕后，再执行下一个任务
+.  并发和串行主要影响：任务的执行方式
+.  并发：多个任务并发（同时）执行
+.  串行：一个任务执行完毕后，再执行下一个任务
 
 **GCD要点**
 * GCD是苹果公司为多核的并行运算提出的解决⽅方案
@@ -114,10 +114,10 @@ NSThread *thread = [[NSThread alloc] initWithTarget:self selector:@selector(down
 
 **概念**
 1.队列和任务
-1> 任务 ：需要执行什么操作
+1. 任务 ：需要执行什么操作
 * 用block来封装任务
 
-2> 队列 ：存放任务
+2. 队列 ：存放任务
 * 全局的并发队列 ： 可以让任务并发执行
 dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
@@ -128,15 +128,15 @@ dispatch_queue_t queue = dispatch_queue_create("queue", NULL);
 dispatch_queue_t queue = dispatch_get_main_queue();
 
 2.执行任务的函数
-1> 同步执行 : 不具备开启新线程的能力
+1. 同步执行 : 不具备开启新线程的能力
 dispatch_sync...
 
-2> 异步执行 : 具备开启新线程的能力
+2. 异步执行 : 具备开启新线程的能力
 dispatch_async...
 
 3.常见的组合
-1> dispatch_async + 全局并发队列 -> 会开启多条线程，并且开启的线程个数有系统决定
-2> dispatch_async + 自己创建的串行队列 -> 会开启一条子线程
+1. dispatch_async + 全局并发队列 -. 会开启多条线程，并且开启的线程个数有系统决定
+2. dispatch_async + 自己创建的串行队列 -. 会开启一条子线程
 
 4.线程间的通信
 ```objc
@@ -148,7 +148,7 @@ dispatch_async(dispatch_get_main_queue(), ^{
 });
 ```
 5.GCD的所有API都在libdispatch.dylib，Xcode会自动导入这个库
-* 主头文件 ： #import <dispatch/dispatch.h>
+* 主头文件 ： #import <dispatch/dispatch.h.
 6.延迟执行
 ```3秒后自动回到当前线程调用self的download:方法，并且传递参数：@"http://555.jpg"
 [self performSelector:@selector(download:) withObject:@"http://555.jpg" afterDelay:3];
@@ -171,27 +171,24 @@ dispatch_once(&onceToken, ^{
 
 ####单例模式
 ```objc
-+ (id)allocWithZone:(struct _NSZone *)zone
-{
-static dispatch_once_t onceToken;
-dispatch_once(&onceToken, ^{
-_instace = [super allocWithZone:zone];
-});
-return _instace;
++ (id)allocWithZone:(struct _NSZone *)zone{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _instace = [super allocWithZone:zone];
+    });
+    return _instace;
 }
 
-+ (instancetype)sharedDataTool
-{
-static dispatch_once_t onceToken;
-dispatch_once(&onceToken, ^{
-_instace = [[self alloc] init];
-});
-return _instace;
++ (instancetype)sharedDataTool{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _instace = [[self alloc] init];
+    });
+    return _instace;
 }
 
-- (id)copyWithZone:(NSZone *)zone
-{
-return _instace;
+- (id)copyWithZone:(NSZone *)zone{
+    return _instace;
 }
 
 ```
@@ -201,27 +198,24 @@ return _instace;
 // 用来保存唯一的单例对象
 static id _instace;
 
-+ (id)allocWithZone:(struct _NSZone *)zone
-{
-static dispatch_once_t onceToken;
-dispatch_once(&onceToken, ^{
-_instace = [super allocWithZone:zone];
-});
-return _instace;
++ (id)allocWithZone:(struct _NSZone *)zone{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _instace = [super allocWithZone:zone];
+    });
+    return _instace;
 }
 
-+ (instancetype)sharedDataTool
-{
-static dispatch_once_t onceToken;
-dispatch_once(&onceToken, ^{
-_instace = [[self alloc] init];
-});
-return _instace;
++ (instancetype)sharedDataTool{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _instace = [[self alloc] init];
+    });
+    return _instace;
 }
 
-- (id)copyWithZone:(NSZone *)zone
-{
-return _instace;
+- (id)copyWithZone:(NSZone *)zone{
+    return _instace;
 }
 
 - (oneway void)release {
@@ -265,10 +259,10 @@ img1 = [UIImage imageWithData:data];
 __block UIImage *img2 = nil;
 // 3.2将任务放在队列里面，再将队列放在队列组里面
 dispatch_group_async(group, queue, ^{
-NSString *urlStr = @"http://a.hiphotos.baidu.jpg";
-NSURL *url = [NSURL URLWithString:urlStr];
-NSData *data = [NSData dataWithContentsOfURL:url];
-img2 = [UIImage imageWithData:data];
+    NSString *urlStr = @"http://a.hiphotos.baidu.jpg";
+    NSURL *url = [NSURL URLWithString:urlStr];
+    NSData *data = [NSData dataWithContentsOfURL:url];
+    img2 = [UIImage imageWithData:data];
 });
 
 // 4.唤醒队列.当队列中的任务都执行完毕之后，会自动来到这个方法，做下一步的操作
@@ -278,8 +272,8 @@ dispatch_group_notify(group, queue, ^{
 
 // 回到主线程
 dispatch_async(dispatch_get_main_queue(), ^{
-self.imgView.image = newImg;
-});
+    self.imgView.image = newImg;
+    });
 });
 
 ```
@@ -294,7 +288,7 @@ self.imgView.image = newImg;
 1.队列的类型
 // blockOperation
 blockOperation.completionBlock = ^{ // 监听block 执行完毕的回调要放在开启之前，否则不会调用
-NSLog(@"completionBlock 操作执行完毕----");
+    NSLog(@"completionBlock 操作执行完毕----");
 };
 [blockOperation start]; // 开始
 ```
@@ -342,20 +336,19 @@ NSLog(@"completionBlock 操作执行完毕----");
 NSOperationQueue *queue = [[NSOperationQueue alloc] init];
 [queue addOperationWithBlock:^{
 // 1.执行一些比较耗时的操作
-
-// 2.回到主线程
-[[NSOperationQueue mainQueue] addOperationWithBlock:^{
-// 主线程 处理点击事件 刷新UI等
-}];
+    // 2.回到主线程
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+    // 主线程 处理点击事件 刷新UI等
+    }];
 }];
 
 ```
 #### 图片下载原理
 
 *  一个图片字典存取图片,key:图片下载地址 value:图片
-*  一个图片字典存取操作， 图片下载的操作 key：url value ：下载操作 -->保证一对一
+*  一个图片字典存取操作， 图片下载的操作 key：url value ：下载操作 --.保证一对一
 *  先从缓存字典里面取图片
-*  有-->显示，没有--> 显示占位图片
+*  有--.显示，没有--. 显示占位图片
 *  没有缓存图片的情况
 *  取出是否有下载操作，有：什么也不做，让他下载 ，没有，那么开启一条操作下载
 *  下载好，保存图片 刷新表格
@@ -364,50 +357,49 @@ NSOperationQueue *queue = [[NSOperationQueue alloc] init];
 下载好图片就刷新这一行，为什么不通过cell.imageView.image 方法设置图片呢？ 因为当下载的过程中，用户偶有滚动，那么正在下载的cell会在缓存池中，给别的cell 用的话，会发生下载两张图片的效果，而下载好立马刷新，（存图片的操作的刷新前面）那么就会被第一宠img循环拦截，所以保证了只下载一次图片
 
 ```objc
--(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-static NSString *ID = @"cell";
-UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
-if (!cell) {
-cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:ID];
-}
-// 取出模型
-JNApp *app = self.apps[indexPath.row];
-cell.textLabel.text = app.name;
-// 先从缓存池中取
-UIImage *img = self.imgs[app.icon];
-if (img) { // 有图片，已经下载好了图片
-cell.imageView.image = img;
-}else{ // 没有图片，没有下载
-// 显示占位图片
-cell.imageView.image = [UIImage imageNamed:@"placeholder"];
-// 取出操作
-NSBlockOperation *opera = self.operations[app.icon];
-if (opera) { // 有操作，正在下载
-// 正在下载什么也不做
-}else{ // 没有下载，那么开启下载
-opera = [NSBlockOperation blockOperationWithBlock:^{
-NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:app.icon]];
-UIImage *downloadImg = [UIImage imageWithData:data];
-// 回到主线程
-[[NSOperationQueue mainQueue]addOperationWithBlock:^{
-// 下载好了，存图片
-if (downloadImg) { // 有图片才存
-self.imgs[app.icon] = downloadImg;
-}
-// 刷新表格
-[self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
-// 删除操作->防止操作太多,注意，这是主线程，意味着已经刷新过图片了.方便下载不成功的时候下次再下载
-[self.operations removeObjectForKey:app.icon];
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    static NSString *ID = @"cell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:ID];
+    if (!cell) {
+    cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:ID];
+    }
+    // 取出模型
+    JNApp *app = self.apps[indexPath.row];
+    cell.textLabel.text = app.name;
+        // 先从缓存池中取
+        UIImage *img = self.imgs[app.icon];
+        if (img) { // 有图片，已经下载好了图片
+        cell.imageView.image = img;
+        }else{ // 没有图片，没有下载
+        // 显示占位图片
+        cell.imageView.image = [UIImage imageNamed:@"placeholder"];
+        // 取出操作
+        NSBlockOperation *opera = self.operations[app.icon];
+        if (opera) { // 有操作，正在下载
+            // 正在下载什么也不做
+                }else{ // 没有下载，那么开启下载
+                opera = [NSBlockOperation blockOperationWithBlock:^{
+                NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:app.icon]];
+                UIImage *downloadImg = [UIImage imageWithData:data];
+            // 回到主线程
+                [[NSOperationQueue mainQueue]addOperationWithBlock:^{
+            // 下载好了，存图片
+                if (downloadImg) { // 有图片才存
+                    self.imgs[app.icon] = downloadImg;
+                }
+        // 刷新表格
+        [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+        // 删除操作-.防止操作太多,注意，这是主线程，意味着已经刷新过图片了.方便下载不成功的时候下次再下载
+        [self.operations removeObjectForKey:app.icon];
+    }];
 }];
-}];
-// 异步执行
-[self.queue addOperation:opera];
-// 存操作 // 添加到字典中 (这句代码为了解决重复下载)
-self.operations[app.icon] = opera;
-}
-}
-return cell;
+        // 异步执行
+        [self.queue addOperation:opera];
+        // 存操作 // 添加到字典中 (这句代码为了解决重复下载)
+        self.operations[app.icon] = opera;
+        }
+    }
+    return cell;
 }
 
 ```
@@ -418,19 +410,19 @@ return cell;
 - (void)main
 {
 @autoreleasepool { // 释放掉子线程中的一些变量(固定写法)
-// 因为是自定义operation ，那么线程都是自己掌控,时刻监听操作是否被取消
-if (self.isCancelled) return; // 开始前判断一下
-// 异步下载操作
-NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:self.imgUrl]];
-UIImage *img = [UIImage imageWithData:data];
+    // 因为是自定义operation ，那么线程都是自己掌控,时刻监听操作是否被取消
+    if (self.isCancelled) return; // 开始前判断一下
+    // 异步下载操作
+    NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:self.imgUrl]];
+    UIImage *img = [UIImage imageWithData:data];
 
-if (self.isCancelled) return; // 下载完之后判断一下(防止收到内存警告之后还是通知代理)
+    if (self.isCancelled) return; // 下载完之后判断一下(防止收到内存警告之后还是通知代理)
 
-// 下载完毕，通知代理，通过代理来交互
-if ([self.delegate respondsToSelector:@selector(downloadOperation:didFinishDownloadImage:)]) {
-[self.delegate downloadOperation:self didFinishDownloadImage:img];
-}
-}
+    // 下载完毕，通知代理，通过代理来交互
+    if ([self.delegate respondsToSelector:@selector(downloadOperation:didFinishDownloadImage:)]) {
+        [self.delegate downloadOperation:self didFinishDownloadImage:img];
+        }
+    }
 }
 
 ```
@@ -469,13 +461,12 @@ if ([self.delegate respondsToSelector:@selector(downloadOperation:didFinishDownl
 ```
 2. 当app接收到内存警告
 ```objc
-- (void)applicationDidReceiveMemoryWarning:(UIApplication *)application
-{
-SDWebImageManager *mgr = [SDWebImageManager sharedManager];
-// 1.取消正在下载的操作
-[mgr cancelAll];
-// 2.清除内存缓存
-[mgr.imageCache clearMemory];
+- (void)applicationDidReceiveMemoryWarning:(UIApplication *)application{
+    SDWebImageManager *mgr = [SDWebImageManager sharedManager];
+    // 1.取消正在下载的操作
+    [mgr cancelAll];
+    // 2.清除内存缓存
+    [mgr.imageCache clearMemory];
 }
 
 ```
